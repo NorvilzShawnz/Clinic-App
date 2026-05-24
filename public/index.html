@@ -428,8 +428,11 @@ function emptyState() {
   return `<div class="empty">
     <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">${ico[S.view]}</svg></div>
     <div class="empty-title">${lbl[S.view]}</div>
-    <div class="empty-desc">Click the button above to add the first record.</div>
-    <button class="btn btn-primary" onclick="openAdd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Record</button>
+    <div class="empty-desc">Add a record manually, or load sample data to get started.</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="openAdd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Record</button>
+      <button class="btn btn-ghost" onclick="seedDatabase()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>Load Sample Data</button>
+    </div>
   </div>`;
 }
 
@@ -667,6 +670,15 @@ function toast(msg, type='ok') {
   el.innerHTML = ico + msg;
   wrap.appendChild(el);
   setTimeout(() => { el.style.animation='tout .2s ease forwards'; setTimeout(()=>el.remove(),200); }, 3000);
+}
+
+// ── Seed ────────────────────────────────────────────────────────────────────────
+async function seedDatabase() {
+  try {
+    const res = await api('/api/seed', { method: 'POST' });
+    toast(`Loaded ${res.patients} patients, ${res.physicians} physicians, ${res.appointments} appointments`, 'ok');
+    await loadAll();
+  } catch(e) { toast(e.message || 'Failed to seed data', 'err'); }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────────
