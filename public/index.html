@@ -28,6 +28,7 @@
       --sh-lg:       0 20px 40px -8px rgba(0,0,0,.2);
     }
 
+    [hidden] { display: none !important; }
     html, body { height: 100%; }
     body { font-family: var(--font-ui); background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
@@ -117,6 +118,8 @@
     .btn-icon-d:hover { background: var(--danger-bg); border-color: #fecaca; color: var(--danger); }
     .btn-loading { opacity: .65; pointer-events: none; }
 
+    .demo-note { background: #fffbeb; border-bottom: 1px solid #fde68a; color: #92400e; font-size: 12.5px; padding: 8px 30px; flex-shrink: 0; }
+
     /* ── CONTENT ─────────────────────────────────────── */
     .content { flex: 1; overflow-y: auto; padding: 26px 30px; }
     .content::-webkit-scrollbar { width: 5px; }
@@ -153,6 +156,121 @@
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     .skel-row td { padding: 13px 15px; }
 
+    /* ── APPOINTMENT CALENDAR ────────────────────────── */
+    .tcard.is-cal .tcard-hd { display: none; }
+    .cal { --hour: 72px; --gutter: 58px; }
+    .cal-bar {
+      display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 22px;
+      padding: 18px 20px; border-bottom: 1px solid var(--border);
+      background:
+        radial-gradient(120% 140% at 100% 0%, rgba(56,189,248,.10) 0%, transparent 55%),
+        linear-gradient(180deg, #fbfdff 0%, #f6f9fc 100%);
+    }
+    .cal-eyebrow { font-size: 10px; font-weight: 500; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); }
+    .cal-title { font-family: var(--font-d); font-size: 27px; font-weight: 600; line-height: 1.05; letter-spacing: -.3px; white-space: nowrap; }
+    .cal-title em { font-style: italic; font-weight: 400; color: var(--sky-dark); }
+    .cal-nav { display: inline-flex; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); overflow: hidden; box-shadow: var(--sh-sm); }
+    .cal-nav button {
+      font-family: var(--font-ui); font-size: 12.5px; font-weight: 500; color: var(--text);
+      background: transparent; border: none; padding: 7px 12px; cursor: pointer; transition: background .12s;
+    }
+    .cal-nav button + button { border-left: 1px solid var(--border); }
+    .cal-nav button:hover { background: var(--bg); }
+    .cal-nav button:active { background: #e6edf4; }
+    .cal-nav svg { width: 14px; height: 14px; display: block; }
+
+    .cal-next {
+      justify-self: end; display: flex; align-items: center; gap: 12px; text-align: left;
+      padding: 9px 14px 9px 10px; border-radius: 11px; cursor: pointer; font-family: var(--font-ui);
+      background: var(--navy); color: white; border: none; max-width: 340px;
+      box-shadow: 0 8px 20px -10px rgba(12,26,46,.55); transition: transform .15s;
+    }
+    .cal-next:hover { transform: translateY(-1px); }
+    .cal-next-dot { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; display: grid; place-items: center; background: rgba(56,189,248,.16); color: var(--sky); }
+    .cal-next-dot svg { width: 16px; height: 16px; }
+    .cal-next-lbl { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--sky); font-weight: 500; }
+    .cal-next-who { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-next-when { font-size: 11.5px; color: rgba(255,255,255,.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .cal-legend { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 20px; border-bottom: 1px solid var(--border); align-items: center; }
+    .cal-legend-lbl { font-size: 11px; color: var(--muted); margin-right: 4px; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px 4px 8px; border-radius: 20px;
+      font-family: var(--font-ui); font-size: 12px; color: var(--text); cursor: pointer;
+      background: var(--surface); border: 1px solid var(--border); transition: all .15s;
+    }
+    .chip:hover { border-color: var(--c); }
+    .chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); transition: transform .15s; }
+    .chip b { font-weight: 500; color: var(--muted); font-size: 11px; }
+    .chip[aria-pressed="false"] { color: var(--muted); background: var(--bg); text-decoration: line-through; text-decoration-color: rgba(100,116,139,.5); }
+    .chip[aria-pressed="false"] i { transform: scale(.6); opacity: .4; }
+
+    .cal-scroll { overflow-x: auto; }
+    .cal-grid { min-width: 780px; }
+    .cal-head { display: grid; grid-template-columns: var(--gutter) repeat(7, minmax(0, 1fr)); border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 3; }
+    .cal-dh { padding: 10px 10px 9px; border-left: 1px solid #f1f5f9; display: flex; align-items: baseline; gap: 7px; }
+    .cal-dow { font-size: 10.5px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+    .cal-dnum { font-family: var(--font-d); font-size: 24px; font-weight: 600; line-height: 1; min-width: 28px; }
+    .cal-dcount { margin-left: auto; font-size: 10.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-dow, .cal-dnum { flex-shrink: 0; }
+    .cal-dcount { min-width: 0; }
+    .cal-dh.is-today .cal-dnum { color: white; background: var(--sky-dark); border-radius: 8px; padding: 2px 6px 3px; text-align: center; }
+    .cal-dh.is-today .cal-dow { color: var(--sky-dark); }
+    .cal-dh.is-weekend { background: #fbfcfd; }
+
+    .cal-body { display: grid; grid-template-columns: var(--gutter) repeat(7, minmax(0, 1fr)); position: relative; }
+    .cal-gutter { position: relative; }
+    .cal-hr { position: absolute; right: 8px; transform: translateY(-50%); font-size: 10.5px; color: #94a3b8; white-space: nowrap; }
+    .cal-col {
+      position: relative; border-left: 1px solid #f1f5f9; cursor: copy;
+      background-image:
+        linear-gradient(to bottom, #e9eef4 1px, transparent 1px),
+        linear-gradient(to bottom, #f5f7fa 1px, transparent 1px);
+      background-size: 100% var(--hour), 100% var(--hour);
+      background-position: 0 0, 0 calc(var(--hour) / 2);
+    }
+    .cal-col.is-weekend { background-color: #fbfcfd; }
+    .cal-col.is-today { background-color: rgba(56,189,248,.045); }
+    .cal-col:hover { background-color: rgba(2,132,199,.03); }
+
+    .cal-ev {
+      position: absolute; display: flex; flex-direction: column; gap: 1px; overflow: hidden; text-align: left;
+      padding: 5px 8px 5px 9px; border-radius: 7px; cursor: pointer; font-family: var(--font-ui);
+      border: none; border-left: 3px solid var(--c); color: var(--text);
+      background: color-mix(in srgb, var(--c) 11%, white);
+      box-shadow: 0 1px 2px rgba(12,26,46,.06);
+      animation: evin .35s cubic-bezier(.2,.8,.2,1) both;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .cal-ev:hover, .cal-ev:focus-visible { transform: translateY(-1px) scale(1.015); box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--c) 70%, transparent); z-index: 2; outline: none; }
+    .cal-ev-time { font-size: 10.5px; font-weight: 500; color: color-mix(in srgb, var(--c) 80%, black); white-space: nowrap; }
+    .cal-ev-pat  { font-size: 12.5px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-ev-doc  { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-hr.is-first { transform: translateY(4px); }
+    .cal-ev.is-compact { padding-top: 3px; padding-bottom: 3px; gap: 0; }
+    .cal-ev.is-compact .cal-ev-doc, .cal-ev.is-short .cal-ev-doc { display: none; }
+    .cal-ev.is-short { flex-direction: row; align-items: center; gap: 6px; padding-top: 1px; padding-bottom: 1px; }
+    .cal-ev.is-short .cal-ev-pat { order: -1; font-size: 11.5px; min-width: 0; }
+    .cal-ev.is-past { opacity: .5; filter: saturate(.6); }
+    @keyframes evin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .cal-now { position: absolute; left: -1px; right: 0; height: 2px; background: var(--danger); z-index: 1; pointer-events: none; }
+    .cal-now::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+
+    .cal-empty {
+      position: absolute; left: var(--gutter); right: 0; top: 50%; transform: translateY(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none;
+    }
+    .cal-empty-card { pointer-events: all; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; text-align: center; box-shadow: var(--sh-lg); }
+    .cal-empty-title { font-family: var(--font-d); font-size: 20px; font-weight: 600; }
+    .cal-empty-desc { font-size: 12.5px; color: var(--muted); margin: 4px 0 12px; }
+
+    @media (max-width: 900px) {
+      .cal-bar { grid-template-columns: 1fr auto; }
+      .cal-next { grid-column: 1 / -1; justify-self: stretch; max-width: none; }
+    }
+    @media (prefers-reduced-motion: reduce) { .cal-ev { animation: none; } }
+
     /* ── EMPTY STATE ─────────────────────────────────── */
     .empty { padding: 56px 20px; text-align: center; }
     .empty-icon { width: 46px; height: 46px; background: var(--bg); border: 1px solid var(--border); border-radius: 11px; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
@@ -182,6 +300,7 @@
 
     .fg { display: flex; flex-direction: column; gap: 5px; }
     .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+    .frow > .fg { min-width: 0; }
     label { font-size: 11.5px; font-weight: 500; color: var(--muted); letter-spacing: .2px; }
     input, select {
       font-family: var(--font-ui); font-size: 13px; color: var(--text);
@@ -272,7 +391,7 @@
     <div class="foot-label">Clinic Management</div>
     <div class="foot-status">
       <div class="dot"></div>
-      <span class="foot-online">System operational</span>
+      <span class="foot-online">Demo environment</span>
     </div>
   </div>
 </aside>
@@ -291,6 +410,10 @@
       </svg>
       Add Patient
     </button>
+  </div>
+
+  <div class="demo-note" role="note">
+    Public demo — anyone can view and edit these records. Use fictional data only; never enter real patient information.
   </div>
 
   <div class="content">
@@ -321,6 +444,7 @@
     </div>
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-foot">
+      <button class="btn btn-danger" id="modal-del" style="margin-right:auto" onclick="deleteFromModal()" hidden>Delete</button>
       <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" id="save-btn" onclick="submitForm()">Save</button>
     </div>
@@ -378,7 +502,11 @@ function showView(v) {
 // ── API ───────────────────────────────────────────────────────────────────────────
 async function api(url, opts = {}) {
   const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts });
-  if (!res.ok) throw new Error((await res.text()) || `HTTP ${res.status}`);
+  if (!res.ok) {
+    let msg = `Request failed (HTTP ${res.status})`;
+    try { const data = await res.json(); if (data?.error) msg = data.error; } catch {}
+    throw new Error(msg);
+  }
   if (res.status === 204) return null;
   return res.json();
 }
@@ -392,7 +520,7 @@ async function load(v) {
   if (S.view === v) renderTable();
   try   { S[v] = await api({ patients:'/api/patients', physicians:'/api/physicians', appointments:'/api/appointments' }[v]); }
   catch { S[v] = []; toast('Failed to load ' + v, 'err'); }
-  if (S.view === v) renderTable();
+  if (S.view === v || (S.view === 'appointments' && v === 'physicians')) renderTable();
   updateCounts();
 }
 
@@ -408,11 +536,13 @@ function renderTable() {
   const data = S[S.view];
   const el   = document.getElementById('tbl');
   document.getElementById('rec-count').textContent = data ? `${data.length} record${data.length !== 1 ? 's' : ''}` : '— records';
+  const isCal = S.view === 'appointments' && !!data?.length;
+  document.querySelector('.tcard').classList.toggle('is-cal', isCal);
   if (!data)         { el.innerHTML = skeleton(); return; }
   if (!data.length)  { el.innerHTML = emptyState(); return; }
   if (S.view === 'patients')     el.innerHTML = patientTable(data);
   else if (S.view === 'physicians')   el.innerHTML = physicianTable(data);
-  else                                el.innerHTML = appointmentTable(data);
+  else                              { el.innerHTML = calendarView(); placeNowLine(); }
 }
 
 function skeleton() {
@@ -436,10 +566,10 @@ function emptyState() {
   </div>`;
 }
 
-function h(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function h(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function fDate(v) { if (!v) return '—'; return new Date(v).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
 function fDT(v)   { if (!v) return '—'; return new Date(v).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true}); }
-function maskSSN(s) { if (!s) return '—'; return '•••–••–' + String(s).slice(-4); }
+function maskSSN(s) { if (!s) return '—'; return '•••–••–' + String(s).slice(-4); }  // API already returns only the last 4 digits
 
 const EDIT_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 const DEL_SVG  = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
@@ -451,8 +581,8 @@ function patientTable(data) {
     <td>${h(p.address) || '—'}</td>
     <td class="td-mono">${maskSSN(p.ssn)}</td>
     <td><div class="row-acts">
-      <button class="btn-icon"   title="Edit"   onclick="editPatient(${p.id})">${EDIT_SVG}</button>
-      <button class="btn-icon-d" title="Delete" onclick="askDelete('patients',${p.id},'${h(p.name)}')">${DEL_SVG}</button>
+      <button class="btn-icon"   title="Edit"   data-act="edit" data-id="${h(p.id)}">${EDIT_SVG}</button>
+      <button class="btn-icon-d" title="Delete" data-act="del"  data-id="${h(p.id)}" data-label="${h(p.name)}">${DEL_SVG}</button>
     </div></td>
   </tr>`).join('');
   return `<table><thead><tr><th>Name</th><th>Date of Birth</th><th>Address</th><th>SSN</th><th style="width:80px"></th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -462,34 +592,248 @@ function physicianTable(data) {
   const rows = data.map(p => `<tr>
     <td class="td-bold">${h(p.name)}</td>
     <td><span class="badge badge-b">${h(p.license)}</span></td>
-    <td>${fDate(p.graduation_date)}</td>
+    <td>${fDate(p.graduationDate)}</td>
     <td>${h(p.specializations) || '—'}</td>
     <td><div class="row-acts">
-      <button class="btn-icon"   title="Edit"   onclick="editPhysician('${h(p.license)}')">${EDIT_SVG}</button>
-      <button class="btn-icon-d" title="Delete" onclick="askDelete('physicians','${h(p.license)}','${h(p.name)}')">${DEL_SVG}</button>
+      <button class="btn-icon"   title="Edit"   data-act="edit" data-id="${h(p.license)}">${EDIT_SVG}</button>
+      <button class="btn-icon-d" title="Delete" data-act="del"  data-id="${h(p.license)}" data-label="${h(p.name)}">${DEL_SVG}</button>
     </div></td>
   </tr>`).join('');
   return `<table><thead><tr><th>Name</th><th>License</th><th>Graduation</th><th>Specializations</th><th style="width:80px"></th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
-function appointmentTable(data) {
-  const rows = data.map(row => {
-    const appt      = row.appointments ?? row;
-    const patName   = row.patients?.name   ?? '—';
-    const physName  = row.physicians?.name ?? '—';
-    return `<tr>
-      <td class="td-bold">${h(patName)}</td>
-      <td>${h(physName)}</td>
-      <td>${fDT(appt.start_time)}</td>
-      <td>${fDT(appt.end_time)}</td>
-      <td><div class="row-acts">
-        <button class="btn-icon"   title="Edit"   onclick="editAppointment(${appt.id})">${EDIT_SVG}</button>
-        <button class="btn-icon-d" title="Delete" onclick="askDelete('appointments',${appt.id},'appointment #${appt.id}')">${DEL_SVG}</button>
-      </div></td>
-    </tr>`;
-  }).join('');
-  return `<table><thead><tr><th>Patient</th><th>Physician</th><th>Start Time</th><th>End Time</th><th style="width:80px"></th></tr></thead><tbody>${rows}</tbody></table>`;
+// ── Appointment calendar ─────────────────────────────────────────────────────────
+const HOUR_PX = 72;
+const PHYS_COLORS = ['#0284c7', '#0f766e', '#c2410c', '#be185d', '#6d28d9', '#4d7c0f', '#0e7490', '#a16207'];
+const CHEV_L = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>`;
+const CHEV_R = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>`;
+const CLOCK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>`;
+
+S.week = startOfWeek(new Date());   // Monday 00:00 local time of the visible week
+S.hiddenPhys = new Set();           // physician licenses filtered out via the legend
+S.cal = null;                       // { first, days } of the last render, for the "now" line
+
+function startOfWeek(d) { const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+function addDays(d, n)  { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function sameDay(a, b)  { return a.toDateString() === b.toDateString(); }
+function fTime(d)       { return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(':00', ''); }
+function fHour(hr)      { return hr === 0 || hr === 24 ? '12 AM' : hr === 12 ? 'Noon' : hr < 12 ? `${hr} AM` : `${hr - 12} PM`; }
+function minutesOf(d)   { return d.getHours() * 60 + d.getMinutes(); }
+
+function physColor(license) {
+  const i = (S.physicians ?? []).findIndex(p => p.license === license);
+  return i < 0 ? '#64748b' : PHYS_COLORS[i % PHYS_COLORS.length];
 }
+
+function apptItems() {
+  return (S.appointments ?? []).map(row => {
+    const a = row.appointments ?? row;
+    return {
+      id: a.id, license: a.physicianLicense,
+      start: a.startTime ? new Date(a.startTime) : null,
+      end:   a.endTime   ? new Date(a.endTime)   : null,
+      patient:   row.patients?.name   ?? 'No patient',
+      physician: row.physicians?.name ?? 'No physician',
+    };
+  }).filter(a => a.start && a.end && !isNaN(a.start) && !isNaN(a.end));
+}
+
+function weekLabel(start) {
+  const end = addDays(start, 6);
+  const m = d => d.toLocaleDateString('en-US', { month: 'short' });
+  const range = start.getMonth() === end.getMonth()
+    ? `${m(start)} ${start.getDate()} – ${end.getDate()}`
+    : `${m(start)} ${start.getDate()} – ${m(end)} ${end.getDate()}`;
+  return `${range}, <em>${end.getFullYear()}</em>`;
+}
+
+function relTime(d, now) {
+  const min = Math.round((d - now) / 60000);
+  if (min < 1)  return 'now';
+  if (min < 60) return `in ${min} min`;
+  if (sameDay(d, now)) return `today, ${fTime(d)}`;
+  if (sameDay(d, addDays(now, 1))) return `tomorrow, ${fTime(d)}`;
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + `, ${fTime(d)}`;
+}
+
+// Splits overlapping appointments within a day into side-by-side lanes.
+function layoutDay(items) {
+  items.sort((a, b) => a.start - b.start || b.end - a.end);
+  let cluster = [], lanes = [], clusterEnd = 0;
+  const flush = () => { cluster.forEach(c => c.lanes = lanes.length); cluster = []; lanes = []; clusterEnd = 0; };
+  for (const it of items) {
+    if (cluster.length && it.start >= clusterEnd) flush();
+    let lane = lanes.findIndex(end => end <= it.start);
+    if (lane < 0) { lane = lanes.length; lanes.push(null); }
+    lanes[lane] = it.end; it.lane = lane;
+    cluster.push(it);
+    clusterEnd = Math.max(clusterEnd, +it.end);
+  }
+  flush();
+  return items;
+}
+
+function calendarView() {
+  const now  = new Date();
+  const days = Array.from({ length: 7 }, (_, i) => addDays(S.week, i));
+  const weekEnd = addDays(S.week, 7);
+  const all     = apptItems();
+  const visible = all.filter(a => !S.hiddenPhys.has(a.license));
+  const inWeek  = visible.filter(a => a.start >= S.week && a.start < weekEnd);
+
+  // Show 8 AM – 6 PM by default, stretched to fit anything scheduled outside it.
+  let first = 8, last = 18;
+  for (const a of inWeek) {
+    first = Math.min(first, a.start.getHours());
+    last  = Math.max(last, sameDay(a.start, a.end) ? Math.ceil(minutesOf(a.end) / 60) : 24);
+  }
+  S.cal = { first, last, days };
+  const hours = last - first;
+
+  const next = all.filter(a => a.start > now).sort((a, b) => a.start - b.start)[0];
+  const nextCard = next
+    ? `<button class="cal-next" data-act="jump" data-t="${next.start.toISOString()}" title="Go to this week">
+        <span class="cal-next-dot">${CLOCK_SVG}</span>
+        <span style="min-width:0">
+          <div class="cal-next-lbl">Next up · ${h(relTime(next.start, now))}</div>
+          <div class="cal-next-who">${h(next.patient)}</div>
+          <div class="cal-next-when">with ${h(next.physician)}</div>
+        </span>
+      </button>`
+    : `<span></span>`;
+
+  const weekCounts = new Map();
+  all.filter(a => a.start >= S.week && a.start < weekEnd).forEach(a => weekCounts.set(a.license, (weekCounts.get(a.license) ?? 0) + 1));
+  const chips = (S.physicians ?? []).map(p => `
+    <button class="chip" data-act="phys" data-id="${h(p.license)}" aria-pressed="${!S.hiddenPhys.has(p.license)}" style="--c:${physColor(p.license)}">
+      <i></i>${h(p.name)}<b>${weekCounts.get(p.license) ?? 0}</b>
+    </button>`).join('');
+
+  const head = days.map(d => {
+    const n = inWeek.filter(a => sameDay(a.start, d)).length;
+    const cls = [sameDay(d, now) && 'is-today', d.getDay() % 6 === 0 && 'is-weekend'].filter(Boolean).join(' ');
+    return `<div class="cal-dh ${cls}">
+      <span class="cal-dow">${d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+      <span class="cal-dnum">${d.getDate()}</span>
+      <span class="cal-dcount">${n ? `${n} appt${n > 1 ? 's' : ''}` : ''}</span>
+    </div>`;
+  }).join('');
+
+  const gutter = Array.from({ length: hours }, (_, i) =>
+    `<span class="cal-hr${i === 0 ? ' is-first' : ''}" style="top:${i * HOUR_PX}px">${fHour(first + i)}</span>`).join('');
+
+  let delay = 0;
+  const cols = days.map((d, di) => {
+    const dayItems = layoutDay(inWeek.filter(a => sameDay(a.start, d)));
+    const blocks = dayItems.map(a => {
+      const startMin = minutesOf(a.start);
+      const endMin   = sameDay(a.start, a.end) ? minutesOf(a.end) : 24 * 60;
+      const top    = (startMin - first * 60) * HOUR_PX / 60;
+      const height = Math.max((endMin - startMin) * HOUR_PX / 60, 22) - 3;
+      const cls = [height < 30 ? 'is-short' : height < 52 && 'is-compact', a.end < now && 'is-past'].filter(Boolean).join(' ');
+      const label = `${a.patient} with ${a.physician}, ${fTime(a.start)} – ${fTime(a.end)}`;
+      return `<button class="cal-ev ${cls}" data-act="edit" data-id="${h(a.id)}" title="${h(label)}" aria-label="${h(label)}"
+        style="--c:${physColor(a.license)};top:${top}px;height:${height}px;left:calc(${a.lane} * 100% / ${a.lanes} + 3px);width:calc(100% / ${a.lanes} - 6px);animation-delay:${(delay++) * 30}ms">
+        <span class="cal-ev-time">${fTime(a.start)} – ${fTime(a.end)}</span>
+        <span class="cal-ev-pat">${h(a.patient)}</span>
+        <span class="cal-ev-doc">${h(a.physician)}</span>
+      </button>`;
+    }).join('');
+    const cls = [sameDay(d, now) && 'is-today', d.getDay() % 6 === 0 && 'is-weekend'].filter(Boolean).join(' ');
+    return `<div class="cal-col ${cls}" data-day="${di}" title="Click to schedule">${blocks}</div>`;
+  }).join('');
+
+  let empty = '';
+  if (!inWeek.length) {
+    const target = visible.filter(a => a.start >= weekEnd).sort((a, b) => a.start - b.start)[0]
+                ?? visible.filter(a => a.start < S.week).sort((a, b) => b.start - a.start)[0];
+    empty = `<div class="cal-empty"><div class="cal-empty-card">
+      <div class="cal-empty-title">A quiet week</div>
+      <div class="cal-empty-desc">${S.hiddenPhys.size ? 'Nothing scheduled for the selected physicians.' : 'Nothing scheduled. Click any time slot to book.'}</div>
+      ${target ? `<button class="btn btn-ghost" data-act="jump" data-t="${target.start.toISOString()}">Go to ${target.start >= weekEnd ? 'next' : 'last'} appointment</button>` : ''}
+    </div></div>`;
+  }
+
+  return `<div class="cal">
+    <div class="cal-bar">
+      <div><div class="cal-eyebrow">Week of</div><div class="cal-title">${weekLabel(S.week)}</div></div>
+      <div class="cal-nav">
+        <button data-act="week" data-dir="-1" aria-label="Previous week">${CHEV_L}</button>
+        <button data-act="week" data-dir="0">Today</button>
+        <button data-act="week" data-dir="1" aria-label="Next week">${CHEV_R}</button>
+      </div>
+      ${nextCard}
+    </div>
+    ${chips ? `<div class="cal-legend"><span class="cal-legend-lbl">Physicians</span>${chips}</div>` : ''}
+    <div class="cal-scroll"><div class="cal-grid">
+      <div class="cal-head"><div></div>${head}</div>
+      <div class="cal-body" style="height:${hours * HOUR_PX}px">
+        <div class="cal-gutter">${gutter}</div>${cols}${empty}
+      </div>
+    </div></div>
+  </div>`;
+}
+
+function placeNowLine() {
+  document.getElementById('cal-now')?.remove();
+  if (!S.cal) return;
+  const now = new Date();
+  const di  = S.cal.days.findIndex(d => sameDay(d, now));
+  const min = minutesOf(now) - S.cal.first * 60;
+  if (di < 0 || min < 0 || min > (S.cal.last - S.cal.first) * 60) return;
+  const col = document.querySelector(`.cal-col[data-day="${di}"]`);
+  if (!col) return;
+  const line = document.createElement('div');
+  line.className = 'cal-now'; line.id = 'cal-now';
+  line.style.top = `${min * HOUR_PX / 60}px`;
+  col.append(line);
+}
+setInterval(() => { if (S.view === 'appointments') placeNowLine(); }, 60000);
+
+// Clicking an empty slot opens a 30-minute booking at the nearest half hour.
+function openSlot(col, clientY) {
+  const day = S.cal.days[Number(col.dataset.day)];
+  const y   = clientY - col.getBoundingClientRect().top;
+  const min = S.cal.first * 60 + Math.floor(y / (HOUR_PX / 2)) * 30;
+  const start = new Date(day); start.setMinutes(min);
+  openModal('add', { startTime: start.toISOString(), endTime: new Date(start.getTime() + 30 * 60000).toISOString() });
+}
+
+function deleteFromModal() {
+  const id = S.modal.editId;
+  const it = apptItems().find(a => a.id === id);
+  closeModal();
+  askDelete('appointments', id, it ? `${it.patient} · ${fDT(it.start)}` : `appointment #${id}`);
+}
+
+// Row buttons carry their record key in data attributes instead of inline JS,
+// so names containing quotes can't break or inject into the handler.
+document.getElementById('tbl').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-act]');
+  if (!btn) {
+    const col = e.target.closest('.cal-col');
+    if (col && e.target === col) openSlot(col, e.clientY);
+    return;
+  }
+  const { act, id, label } = btn.dataset;
+  if (act === 'week') {
+    S.week = btn.dataset.dir === '0' ? startOfWeek(new Date()) : addDays(S.week, 7 * Number(btn.dataset.dir));
+    return renderTable();
+  }
+  if (act === 'jump') { S.week = startOfWeek(new Date(btn.dataset.t)); return renderTable(); }
+  if (act === 'phys') {
+    S.hiddenPhys.has(id) ? S.hiddenPhys.delete(id) : S.hiddenPhys.add(id);
+    return renderTable();
+  }
+  const key = S.view === 'physicians' ? id : Number(id);
+  if (act === 'edit') {
+    if (S.view === 'patients') editPatient(key);
+    else if (S.view === 'physicians') editPhysician(key);
+    else editAppointment(key);
+  } else if (act === 'del') {
+    askDelete(S.view, key, label);
+  }
+});
 
 // ── Modal helpers ────────────────────────────────────────────────────────────────
 function openAdd() { openModal('add', null); }
@@ -528,6 +872,7 @@ function openModal(mode, data) {
     document.getElementById('modal-body').innerHTML = appointmentForm(data);
     populateDropdowns(data);
   }
+  document.getElementById('modal-del').hidden = !(v === 'appointments' && mode === 'edit');
   document.getElementById('modal-ov').classList.add('open');
 }
 
@@ -539,13 +884,13 @@ function patientForm(d) {
     <div class="fg"><label>Full Name *</label><input id="f-name" value="${h(d?.name??'')}" placeholder="e.g. Maria Delgado-Cruz" /></div>
     <div class="frow">
       <div class="fg"><label>Date of Birth</label><input id="f-bday" type="date" value="${h(bd)}" /></div>
-      <div class="fg"><label>SSN</label><input id="f-ssn" value="${h(d?.ssn??'')}" placeholder="XXX-XX-XXXX" /></div>
+      <div class="fg"><label>SSN</label><input id="f-ssn" value="" placeholder="${d?.ssn ? 'Leave blank to keep ' + h(d.ssn) : 'XXX-XX-XXXX'}" autocomplete="off" /></div>
     </div>
     <div class="fg"><label>Address</label><input id="f-addr" value="${h(d?.address??'')}" placeholder="123 Main St, City" /></div>`;
 }
 
 function physicianForm(d, isEdit) {
-  const gd = d?.graduation_date ? new Date(d.graduation_date).toISOString().split('T')[0] : '';
+  const gd = d?.graduationDate ? new Date(d.graduationDate).toISOString().split('T')[0] : '';
   const licField = isEdit
     ? `<input id="f-lic" type="hidden" value="${h(d?.license??'')}" />`
     : `<div class="fg"><label>License *</label><input id="f-lic" value="${h(d?.license??'')}" placeholder="e.g. MD-2024-0847" /><span class="fhint">Cannot be changed after creation</span></div>`;
@@ -564,14 +909,14 @@ function appointmentForm(d) {
     return new Date(dt.getTime() - off * 60000).toISOString().slice(0,16);
   };
   return `
-    <div class="fg"><label>Patient</label><select id="f-pat"><option value="">— Select patient —</option></select></div>
-    <div class="fg"><label>Physician</label><select id="f-phys"><option value="">— Select physician —</option></select></div>
+    <div class="fg"><label>Patient *</label><select id="f-pat"><option value="">— Select patient —</option></select></div>
+    <div class="fg"><label>Physician *</label><select id="f-phys"><option value="">— Select physician —</option></select></div>
     <div class="frow">
-      <div class="fg"><label>Start Time</label><input id="f-start" type="datetime-local" value="${fmt(d?.start_time??'')}" /></div>
-      <div class="fg"><label>End Time</label><input id="f-end" type="datetime-local" value="${fmt(d?.end_time??'')}" /></div>
+      <div class="fg"><label>Start Time *</label><input id="f-start" type="datetime-local" value="${fmt(d?.startTime??'')}" /></div>
+      <div class="fg"><label>End Time *</label><input id="f-end" type="datetime-local" value="${fmt(d?.endTime??'')}" /></div>
     </div>
-    <input type="hidden" id="f-pat-init"  value="${d?.patient_id??''}" />
-    <input type="hidden" id="f-phys-init" value="${d?.physician_license??''}" />`;
+    <input type="hidden" id="f-pat-init"  value="${h(d?.patientId??'')}" />
+    <input type="hidden" id="f-phys-init" value="${h(d?.physicianLicense??'')}" />`;
 }
 
 async function populateDropdowns(d) {
@@ -597,6 +942,8 @@ async function populateDropdowns(d) {
 // ── Submit ───────────────────────────────────────────────────────────────────────
 async function submitForm() {
   const btn = document.getElementById('save-btn');
+  if (btn.classList.contains('btn-loading')) return;
+  const label = btn.textContent;
   btn.classList.add('btn-loading'); btn.textContent = 'Saving…';
   try {
     const { mode, editId } = S.modal;
@@ -611,7 +958,7 @@ async function submitForm() {
     toast(e.message || 'Save failed', 'err');
   } finally {
     btn.classList.remove('btn-loading');
-    btn.textContent = S.modal.mode === 'add' ? 'Save' : 'Save Changes';
+    btn.textContent = label;
   }
 }
 
@@ -633,8 +980,21 @@ async function savePhysician(mode, id) {
   else await api(`/api/physicians?license=${encodeURIComponent(license)}`, { method:'PUT', body:JSON.stringify(body) });
 }
 
+// datetime-local values are in the user's time zone; send absolute ISO timestamps.
+function toISO(v) { const d = v ? new Date(v) : null; return d && !isNaN(d) ? d.toISOString() : null; }
+
 async function saveAppointment(mode, id) {
-  const body = { startTime: document.getElementById('f-start').value || null, endTime: document.getElementById('f-end').value || null, patientId: document.getElementById('f-pat').value || null, physicianLicense: document.getElementById('f-phys').value || null };
+  const patientId        = document.getElementById('f-pat').value;
+  const physicianLicense = document.getElementById('f-phys').value;
+  const startTime = toISO(document.getElementById('f-start').value);
+  const endTime   = toISO(document.getElementById('f-end').value);
+  if (!patientId)        throw new Error('A patient is required');
+  if (!physicianLicense) throw new Error('A physician is required');
+  if (!startTime || !endTime) throw new Error('Start and end times are required');
+  if (new Date(endTime) <= new Date(startTime)) throw new Error('End time must be after start time');
+  // The server checks for scheduling conflicts and reports them in this time zone.
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const body = { startTime, endTime, patientId, physicianLicense, timeZone };
   if (mode === 'add') await api('/api/appointments', { method:'POST', body:JSON.stringify(body) });
   else await api(`/api/appointments?id=${id}`, { method:'PUT', body:JSON.stringify(body) });
 }
@@ -642,7 +1002,8 @@ async function saveAppointment(mode, id) {
 // ── Delete ───────────────────────────────────────────────────────────────────────
 function askDelete(view, id, label) {
   S.delTarget = { view, id };
-  document.getElementById('confirm-msg').textContent = `Delete "${label}"? This cannot be undone.`;
+  const cascade = view === 'appointments' ? '' : ' Any appointments for this record will also be deleted.';
+  document.getElementById('confirm-msg').textContent = `Delete "${label}"?${cascade} This cannot be undone.`;
   document.getElementById('confirm-ov').classList.add('open');
 }
 function closeConfirm() { document.getElementById('confirm-ov').classList.remove('open'); S.delTarget = null; }
@@ -653,8 +1014,8 @@ async function doDelete() {
   const urls = { patients:`/api/patients?id=${id}`, physicians:`/api/physicians?license=${encodeURIComponent(id)}`, appointments:`/api/appointments?id=${id}` };
   try {
     await api(urls[view], { method:'DELETE' });
-    S[view] = null;
-    if (view === S.view) await load(view); else updateCounts();
+    // Patient/physician deletes cascade to appointments, so refresh those too.
+    await (view === 'appointments' ? load(view) : Promise.all([load(view), load('appointments')]));
     toast('Record deleted', 'ok');
   } catch(e) { toast(e.message || 'Delete failed', 'err'); }
 }
@@ -667,16 +1028,19 @@ function toast(msg, type='ok') {
     ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`
     : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
   el.className = `toast ${type}`;
-  el.innerHTML = ico + msg;
+  el.innerHTML = ico;
+  el.append(document.createTextNode(msg));
   wrap.appendChild(el);
-  setTimeout(() => { el.style.animation='tout .2s ease forwards'; setTimeout(()=>el.remove(),200); }, 3000);
+  setTimeout(() => { el.style.animation='tout .2s ease forwards'; setTimeout(()=>el.remove(),200); }, type === 'err' ? 6000 : 3000);
 }
 
 // ── Seed ────────────────────────────────────────────────────────────────────────
 async function seedDatabase() {
   try {
     const res = await api('/api/seed', { method: 'POST' });
-    toast(`Loaded ${res.patients} patients, ${res.physicians} physicians, ${res.appointments} appointments`, 'ok');
+    toast(res.appointments != null
+      ? `Loaded ${res.patients} patients, ${res.physicians} physicians, ${res.appointments} appointments`
+      : res.message, 'ok');
     await loadAll();
   } catch(e) { toast(e.message || 'Failed to seed data', 'err'); }
 }

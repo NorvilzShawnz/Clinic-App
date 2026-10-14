@@ -2,6 +2,8 @@
 
 A skeleton application for doctor offices built in C#. This application provides basic CRUD functionality for managing Patients, Physicians, and Appointments.
 
+> **Web version:** a separate web implementation is deployed at https://clinicskeleton.netlify.app. It does not use the C# code: the UI is a single vanilla HTML/JS page (`public/index.html`), the API is TypeScript Netlify Functions (`netlify/functions/`), and data is stored in Netlify Database (Postgres) via Drizzle ORM (`db/`). It is a **public demo with no authentication** — use fictional data only. Full SSNs are accepted on write but the API only ever returns the last four digits. Run it locally with `npm install` and `npm run dev`.
+
 ## Table of Contents
 
 - [About](#about)
