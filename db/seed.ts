@@ -1,6 +1,7 @@
 import { db } from "./index.js";
 import { patients, physicians, appointments } from "./schema.js";
 import { count } from "drizzle-orm";
+import { fromWallTime, wallTime } from "../lib/clinic.js";
 
 const seedPatients = [
   { name: "Maria Delgado-Cruz",   birthday: new Date("1985-03-14"), address: "742 Elm Street, Springfield, IL 62701",       ssn: "412-55-7831" },
@@ -27,10 +28,10 @@ const seedPhysicians = [
 ];
 
 function futureDate(daysFromNow: number, hour: number, minute: number = 0): Date {
-  const d = new Date();
-  d.setDate(d.getDate() + daysFromNow);
-  d.setHours(hour, minute, 0, 0);
-  return d;
+  // Wall-clock time in the clinic's time zone, so seeded appointments land within office hours.
+  const today = wallTime(new Date());
+  const day = new Date(Date.UTC(today.year, today.month - 1, today.day + daysFromNow));
+  return fromWallTime({ year: day.getUTCFullYear(), month: day.getUTCMonth() + 1, day: day.getUTCDate(), hour, minute });
 }
 
 const seedAppointments = [
