@@ -2,6 +2,7 @@ import { db } from "./index.js";
 import { patients, physicians, appointments } from "./schema.js";
 import { count } from "drizzle-orm";
 import { fromWallTime, wallTime } from "../lib/clinic.js";
+import { checkSchedulingWindow, findConflicts, parseAppointmentInput, type ExistingAppointment } from "../lib/scheduling.js";
 
 const seedPatients = [
   { name: "Maria Delgado-Cruz",   birthday: new Date("1985-03-14"), address: "742 Elm Street, Springfield, IL 62701",       ssn: "412-55-7831" },
@@ -27,9 +28,9 @@ const seedPhysicians = [
   { license: "MD-2020-05518", name: "Dr. Mei-Lin Chang",       graduationDate: new Date("2019-06-08"), specializations: "Neurology, Sleep Medicine" },
 ];
 
-function futureDate(daysFromNow: number, hour: number, minute: number = 0): Date {
+function futureDate(daysFromNow: number, hour: number, minute: number, now: Date): Date {
   // Wall-clock time in the clinic's time zone, so seeded appointments land within office hours.
-  const today = wallTime(new Date());
+  const today = wallTime(now);
   const day = new Date(Date.UTC(today.year, today.month - 1, today.day + daysFromNow));
   return fromWallTime({ year: day.getUTCFullYear(), month: day.getUTCMonth() + 1, day: day.getUTCDate(), hour, minute });
 }
@@ -51,6 +52,34 @@ const seedAppointments = [
   { patientIdx: 3,  physicianIdx: 0, startDay: 7, startHour: 13, startMin: 0,  endHour: 13, endMin: 45 },
 ];
 
+export function buildSeedAppointments(patientIds: number[], now = new Date()) {
+  const values = seedAppointments.map(a => ({
+    startTime: futureDate(a.startDay, a.startHour, a.startMin, now),
+    endTime: futureDate(a.startDay, a.endHour, a.endMin, now),
+    patientId: patientIds[a.patientIdx],
+    physicianLicense: seedPhysicians[a.physicianIdx].license,
+  }));
+  const existing: ExistingAppointment[] = [];
+
+  values.forEach((value, index) => {
+    const input = parseAppointmentInput({
+      startTime: value.startTime.toISOString(),
+      endTime: value.endTime.toISOString(),
+      patientId: String(value.patientId),
+      physicianLicense: value.physicianLicense,
+    });
+    checkSchedulingWindow(input, now);
+
+    const conflicts = findConflicts(input, existing);
+    if (conflicts.patient.length || conflicts.physician.length) {
+      throw new Error(`Seed appointment ${index + 1} conflicts with an existing seed appointment`);
+    }
+    existing.push({ id: index + 1, ...input });
+  });
+
+  return values;
+}
+
 // Inserts seed data only when the patients and physicians tables are empty.
 export async function seedIfEmpty() {
   const [{ value: patientCount }] = await db.select({ value: count() }).from(patients);
@@ -64,12 +93,7 @@ export async function seedIfEmpty() {
 
   await db.insert(physicians).values(seedPhysicians);
 
-  const appointmentValues = seedAppointments.map(a => ({
-    startTime: futureDate(a.startDay, a.startHour, a.startMin),
-    endTime: futureDate(a.startDay, a.endHour, a.endMin),
-    patientId: insertedPatients[a.patientIdx].id,
-    physicianLicense: seedPhysicians[a.physicianIdx].license,
-  }));
+  const appointmentValues = buildSeedAppointments(insertedPatients.map(patient => patient.id));
 
   await db.insert(appointments).values(appointmentValues);
 
