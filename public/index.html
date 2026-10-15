@@ -137,6 +137,47 @@
     .tcard-name  { font-size: 13px; font-weight: 600; }
     .tcard-count { font-size: 12px; color: var(--muted); background: var(--bg); padding: 2px 9px; border-radius: 20px; border: 1px solid var(--border); }
 
+    .tcard.is-overview { background: transparent; border: 0; overflow: visible; box-shadow: none; }
+    .tcard.is-overview .tcard-hd { padding: 0 0 12px; border: 0; background: transparent; }
+    .overview-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .overview-metric { min-width: 0; padding: 15px 17px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); box-shadow: var(--sh-sm); }
+    .overview-metric-label { color: var(--muted); font-size: 11px; font-weight: 500; text-transform: uppercase; }
+    .overview-metric-value { margin-top: 5px; font-family: var(--font-d); font-size: 29px; font-weight: 600; line-height: 1; }
+    .overview-columns { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(250px, 1fr); gap: 26px; }
+    .overview-section { min-width: 0; }
+    .overview-section-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 0 10px; border-bottom: 1px solid var(--border); }
+    .overview-section-title { font-size: 14px; font-weight: 600; }
+    .overview-section-meta { color: var(--muted); font-size: 12px; }
+    .overview-appt { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .overview-appt:last-child { border-bottom: 0; }
+    .overview-appt-patient { min-width: 0; font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .overview-appt-physician { margin-top: 2px; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .overview-appt-time { white-space: nowrap; font-size: 12px; font-weight: 500; }
+    .overview-empty { padding: 22px 0; color: var(--muted); font-size: 13px; }
+    .overview-empty .btn { margin-top: 12px; }
+    .overview-physician { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+    .overview-physician:last-child { border-bottom: 0; }
+    .overview-physician-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+    .overview-physician-count { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    @media (max-width: 760px) {
+      .overview-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .overview-columns { grid-template-columns: 1fr; gap: 22px; }
+      .overview-appt { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; }
+      .overview-appt .btn { grid-column: 1 / -1; justify-self: start; }
+    }
+    @media (max-width: 600px) {
+      :root { --sidebar-w: 62px; }
+      .sidebar-logo { padding: 18px 14px; }
+      .logo-name, .logo-sub, .nav-label, .nav-count, .foot-label, .foot-online { display: none; }
+      .sidebar-nav { padding: 12px 6px; }
+      .nav-item { justify-content: center; padding: 12px 8px; font-size: 0; }
+      .sidebar-foot { display: flex; justify-content: center; padding: 14px 0; }
+      .foot-status { margin: 0; }
+      .topbar { padding: 0 16px; }
+      .demo-note { padding: 8px 16px; }
+      .content { padding: 20px 16px; }
+    }
+
     table { width: 100%; border-collapse: collapse; }
     thead tr { background: #f8fafc; }
     th { padding: 9px 15px; text-align: left; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
@@ -361,8 +402,16 @@
   </div>
 
   <nav class="sidebar-nav">
+    <div class="nav-label">Workspace</div>
+    <div class="nav-item active" data-v="overview" onclick="showView('overview')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="5" rx="1"/>
+        <rect x="13" y="10" width="8" height="11" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/>
+      </svg>
+      Overview
+    </div>
     <div class="nav-label">Records</div>
-    <div class="nav-item active" data-v="patients" onclick="showView('patients')">
+    <div class="nav-item" data-v="patients" onclick="showView('patients')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
       </svg>
@@ -469,7 +518,7 @@
 <script>
 // ── State ────────────────────────────────────────────────────────────────────────
 const S = {
-  view: 'patients',
+  view: 'overview',
   patients:     null,   // null = loading, [] = empty, [...] = loaded
   physicians:   null,
   appointments: null,
@@ -479,6 +528,7 @@ const S = {
 };
 
 const VIEWS = {
+  overview:     { title: 'Overview',     sub: 'Today at the clinic',                              sec: 'Clinic overview', btn: null               },
   patients:     { title: 'Patients',     sub: 'Manage patient records and personal information',  sec: 'All Patients',     btn: 'Add Patient'     },
   physicians:   { title: 'Physicians',   sub: 'Manage physician profiles and credentials',        sec: 'All Physicians',   btn: 'Add Physician'   },
   appointments: { title: 'Appointments', sub: 'Schedule and track patient appointments',          sec: 'All Appointments', btn: 'Add Appointment' },
@@ -493,7 +543,9 @@ function showView(v) {
   document.getElementById('page-title').textContent = cfg.title;
   document.getElementById('page-sub').textContent   = cfg.sub;
   document.getElementById('sec-name').textContent   = cfg.sec;
-  document.getElementById('add-btn').innerHTML = `
+  const addButton = document.getElementById('add-btn');
+  addButton.hidden = !cfg.btn;
+  addButton.innerHTML = `
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px">
       <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
     </svg>${cfg.btn}`;
@@ -526,7 +578,7 @@ async function load(v) {
   if (S.view === v) renderTable();
   try   { S[v] = await api({ patients:'/api/patients', physicians:'/api/physicians', appointments:'/api/appointments' }[v]); }
   catch { S[v] = []; toast('Failed to load ' + v, 'err'); }
-  if (S.view === v || (S.view === 'appointments' && v === 'physicians')) renderTable();
+  if (S.view === v || (S.view === 'appointments' && v === 'physicians') || S.view === 'overview') renderTable();
   updateCounts();
 }
 
@@ -541,14 +593,81 @@ function updateCounts() {
 function renderTable() {
   const data = S[S.view];
   const el   = document.getElementById('tbl');
+  const tableCard = document.querySelector('.tcard');
+  const isOverview = S.view === 'overview';
+  tableCard.classList.toggle('is-overview', isOverview);
+  if (isOverview) {
+    document.getElementById('sec-name').textContent = VIEWS.overview.sec;
+    document.getElementById('rec-count').textContent = S.clinic?.label ?? clinicTimeZone();
+    if (!S.patients || !S.physicians || !S.appointments) { el.innerHTML = skeleton(); return; }
+    el.innerHTML = overviewView();
+    return;
+  }
   document.getElementById('rec-count').textContent = data ? `${data.length} record${data.length !== 1 ? 's' : ''}` : '— records';
   const isCal = S.view === 'appointments' && !!data?.length;
-  document.querySelector('.tcard').classList.toggle('is-cal', isCal);
+  tableCard.classList.toggle('is-cal', isCal);
   if (!data)         { el.innerHTML = skeleton(); return; }
   if (!data.length)  { el.innerHTML = emptyState(); return; }
   if (S.view === 'patients')     el.innerHTML = patientTable(data);
   else if (S.view === 'physicians')   el.innerHTML = physicianTable(data);
   else                              { el.innerHTML = calendarView(); placeNowLine(); }
+}
+
+function overviewView() {
+  const now = new Date();
+  const appointments = apptItems().sort((a, b) => a.start - b.start);
+  const todaysAppointments = appointments.filter(item => sameClinicDay(item.start, now));
+  const upcomingAppointments = appointments.filter(item => item.start > now);
+  const physicianCounts = new Map((S.physicians ?? []).map(physician => [physician.license, 0]));
+  for (const item of todaysAppointments) physicianCounts.set(item.license, (physicianCounts.get(item.license) ?? 0) + 1);
+  const next = upcomingAppointments[0];
+  const metrics = [
+    ['Appointments today', todaysAppointments.length],
+    ['Upcoming', upcomingAppointments.length],
+    ['Patients', S.patients.length],
+    ['Physicians', S.physicians.length],
+  ];
+  const metricMarkup = metrics.map(([label, value]) => `<div class="overview-metric">
+    <div class="overview-metric-label">${h(label)}</div><div class="overview-metric-value">${value}</div>
+  </div>`).join('');
+  const schedule = todaysAppointments.length
+    ? todaysAppointments.map(item => `<div class="overview-appt">
+        <div><div class="overview-appt-patient">${h(item.patient)}</div><div class="overview-appt-physician">${h(item.physician)}</div></div>
+        <time class="overview-appt-time">${h(fTime(item.start))} – ${h(fTime(item.end))}</time>
+        <button class="btn btn-ghost" data-act="jump" data-t="${item.start.toISOString()}">Open day</button>
+      </div>`).join('')
+    : `<div class="overview-empty">No appointments scheduled for today.
+        <br><button class="btn btn-primary" onclick="showView('appointments')">Open schedule</button>
+      </div>`;
+  const physicians = S.physicians.length
+    ? S.physicians.map(physician => `<div class="overview-physician">
+        <span class="overview-physician-name">${h(physician.name)}</span>
+        <span class="overview-physician-count">${physicianCounts.get(physician.license) ?? 0} today</span>
+      </div>`).join('')
+    : '<div class="overview-empty">No physicians on file.</div>';
+  const nextMarkup = next
+    ? `<div class="overview-appt">
+        <div><div class="overview-appt-patient">${h(next.patient)}</div><div class="overview-appt-physician">${h(next.physician)}</div></div>
+        <time class="overview-appt-time">${h(relTime(next.start, now))}</time>
+        <button class="btn btn-ghost" data-act="jump" data-t="${next.start.toISOString()}">Open day</button>
+      </div>`
+    : '<div class="overview-empty">No future appointments scheduled.</div>';
+
+  return `<div class="overview">
+    <div class="overview-metrics">${metricMarkup}</div>
+    <div class="overview-columns">
+      <section class="overview-section">
+        <div class="overview-section-hd"><h2 class="overview-section-title">Today’s schedule</h2><span class="overview-section-meta">${todaysAppointments.length} appointments</span></div>
+        ${schedule}
+        <div class="overview-section-hd" style="margin-top:20px"><h2 class="overview-section-title">Next appointment</h2></div>
+        ${nextMarkup}
+      </section>
+      <section class="overview-section">
+        <div class="overview-section-hd"><h2 class="overview-section-title">Physician activity</h2><span class="overview-section-meta">Today</span></div>
+        ${physicians}
+      </section>
+    </div>
+  </div>`;
 }
 
 function skeleton() {
@@ -862,7 +981,11 @@ document.getElementById('tbl').addEventListener('click', e => {
     S.week = btn.dataset.dir === '0' ? startOfWeek(new Date()) : addDays(S.week, 7 * Number(btn.dataset.dir));
     return renderTable();
   }
-  if (act === 'jump') { S.week = startOfWeek(new Date(btn.dataset.t)); return renderTable(); }
+  if (act === 'jump') {
+    S.week = startOfWeek(new Date(btn.dataset.t));
+    if (S.view !== 'appointments') showView('appointments');
+    return renderTable();
+  }
   if (act === 'phys') {
     S.hiddenPhys.has(id) ? S.hiddenPhys.delete(id) : S.hiddenPhys.add(id);
     return renderTable();
@@ -1096,6 +1219,7 @@ async function seedDatabase() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────────
+showView('overview');
 loadAll();
 </script>
 </body>
