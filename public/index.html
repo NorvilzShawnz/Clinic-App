@@ -473,6 +473,7 @@ const S = {
   patients:     null,   // null = loading, [] = empty, [...] = loaded
   physicians:   null,
   appointments: null,
+  clinic:       null,
   modal: { mode: 'add', editId: null },   // editId = id or license
   delTarget: null,                         // { view, id, label }
 };
@@ -512,6 +513,11 @@ async function api(url, opts = {}) {
 }
 
 async function loadAll() {
+  try {
+    S.clinic = await api('/api/clinic');
+    S.week = startOfWeek(new Date());
+  }
+  catch { toast('Failed to load clinic settings', 'err'); }
   await Promise.all([load('patients'), load('physicians'), load('appointments')]);
 }
 
@@ -567,8 +573,8 @@ function emptyState() {
 }
 
 function h(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-function fDate(v) { if (!v) return '—'; return new Date(v).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
-function fDT(v)   { if (!v) return '—'; return new Date(v).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true}); }
+function fDate(v) { if (!v) return '—'; return new Date(v).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}); }
+function fDT(v)   { if (!v) return '—'; return new Date(v).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:clinicTimeZone()}); }
 function maskSSN(s) { if (!s) return '—'; return '•••–••–' + String(s).slice(-4); }  // API already returns only the last 4 digits
 
 const EDIT_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
@@ -609,16 +615,45 @@ const CHEV_L = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const CHEV_R = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 18 15 12 9 6"/></svg>`;
 const CLOCK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>`;
 
-S.week = startOfWeek(new Date());   // Monday 00:00 local time of the visible week
+S.week = startOfWeek(new Date());   // Monday 00:00 in the clinic's calendar
 S.hiddenPhys = new Set();           // physician licenses filtered out via the legend
 S.cal = null;                       // { first, days } of the last render, for the "now" line
 
-function startOfWeek(d) { const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
-function addDays(d, n)  { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
-function sameDay(a, b)  { return a.toDateString() === b.toDateString(); }
-function fTime(d)       { return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(':00', ''); }
+function clinicTimeZone() { return S.clinic?.timeZone ?? 'America/New_York'; }
+function clinicParts(date) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+    timeZone: clinicTimeZone(), hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric',
+  }).formatToParts(date).map(part => [part.type, part.value]));
+  return { year: Number(parts.year), month: Number(parts.month), day: Number(parts.day), hour: Number(parts.hour), minute: Number(parts.minute) };
+}
+function fromClinicWallTime(wall) {
+  const target = Date.UTC(wall.year, wall.month - 1, wall.day, wall.hour, wall.minute);
+  let timestamp = target;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const seen = clinicParts(new Date(timestamp));
+    const difference = target - Date.UTC(seen.year, seen.month - 1, seen.day, seen.hour, seen.minute);
+    if (!difference) break;
+    timestamp += difference;
+  }
+  return new Date(timestamp);
+}
+function clinicDateKey(date) {
+  const p = clinicParts(date);
+  return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
+}
+function calendarDateKey(day) { return day.toISOString().slice(0, 10); }
+function isClinicDay(date, day) { return clinicDateKey(date) === calendarDateKey(day); }
+function sameClinicDay(a, b) { return clinicDateKey(a) === clinicDateKey(b); }
+function startOfWeek(date) {
+  const p = clinicParts(date);
+  const day = new Date(Date.UTC(p.year, p.month - 1, p.day));
+  day.setUTCDate(day.getUTCDate() - ((day.getUTCDay() + 6) % 7));
+  return day;
+}
+function addDays(day, count) { const result = new Date(day); result.setUTCDate(result.getUTCDate() + count); return result; }
+function fTime(date) { return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: clinicTimeZone() }).replace(':00', ''); }
 function fHour(hr)      { return hr === 0 || hr === 24 ? '12 AM' : hr === 12 ? 'Noon' : hr < 12 ? `${hr} AM` : `${hr - 12} PM`; }
-function minutesOf(d)   { return d.getHours() * 60 + d.getMinutes(); }
+function minutesOf(date) { const p = clinicParts(date); return p.hour * 60 + p.minute; }
 
 function physColor(license) {
   const i = (S.physicians ?? []).findIndex(p => p.license === license);
@@ -640,20 +675,22 @@ function apptItems() {
 
 function weekLabel(start) {
   const end = addDays(start, 6);
-  const m = d => d.toLocaleDateString('en-US', { month: 'short' });
-  const range = start.getMonth() === end.getMonth()
-    ? `${m(start)} ${start.getDate()} – ${end.getDate()}`
-    : `${m(start)} ${start.getDate()} – ${m(end)} ${end.getDate()}`;
-  return `${range}, <em>${end.getFullYear()}</em>`;
+  const m = d => d.toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+  const range = start.getUTCMonth() === end.getUTCMonth()
+    ? `${m(start)} ${start.getUTCDate()} – ${end.getUTCDate()}`
+    : `${m(start)} ${start.getUTCDate()} – ${m(end)} ${end.getUTCDate()}`;
+  return `${range}, <em>${end.getUTCFullYear()}</em>`;
 }
 
 function relTime(d, now) {
   const min = Math.round((d - now) / 60000);
   if (min < 1)  return 'now';
   if (min < 60) return `in ${min} min`;
-  if (sameDay(d, now)) return `today, ${fTime(d)}`;
-  if (sameDay(d, addDays(now, 1))) return `tomorrow, ${fTime(d)}`;
-  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + `, ${fTime(d)}`;
+  if (sameClinicDay(d, now)) return `today, ${fTime(d)}`;
+  const tomorrow = clinicParts(now);
+  const tomorrowDate = new Date(Date.UTC(tomorrow.year, tomorrow.month - 1, tomorrow.day + 1));
+  if (clinicDateKey(d) === calendarDateKey(tomorrowDate)) return `tomorrow, ${fTime(d)}`;
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: clinicTimeZone() }) + `, ${fTime(d)}`;
 }
 
 // Splits overlapping appointments within a day into side-by-side lanes.
@@ -679,13 +716,14 @@ function calendarView() {
   const weekEnd = addDays(S.week, 7);
   const all     = apptItems();
   const visible = all.filter(a => !S.hiddenPhys.has(a.license));
-  const inWeek  = visible.filter(a => a.start >= S.week && a.start < weekEnd);
+  const weekStartKey = calendarDateKey(S.week), weekEndKey = calendarDateKey(weekEnd);
+  const inWeek  = visible.filter(a => clinicDateKey(a.start) >= weekStartKey && clinicDateKey(a.start) < weekEndKey);
 
   // Show 8 AM – 6 PM by default, stretched to fit anything scheduled outside it.
   let first = 8, last = 18;
   for (const a of inWeek) {
-    first = Math.min(first, a.start.getHours());
-    last  = Math.max(last, sameDay(a.start, a.end) ? Math.ceil(minutesOf(a.end) / 60) : 24);
+    first = Math.min(first, clinicParts(a.start).hour);
+    last  = Math.max(last, sameClinicDay(a.start, a.end) ? Math.ceil(minutesOf(a.end) / 60) : 24);
   }
   S.cal = { first, last, days };
   const hours = last - first;
@@ -703,18 +741,18 @@ function calendarView() {
     : `<span></span>`;
 
   const weekCounts = new Map();
-  all.filter(a => a.start >= S.week && a.start < weekEnd).forEach(a => weekCounts.set(a.license, (weekCounts.get(a.license) ?? 0) + 1));
+  all.filter(a => clinicDateKey(a.start) >= weekStartKey && clinicDateKey(a.start) < weekEndKey).forEach(a => weekCounts.set(a.license, (weekCounts.get(a.license) ?? 0) + 1));
   const chips = (S.physicians ?? []).map(p => `
     <button class="chip" data-act="phys" data-id="${h(p.license)}" aria-pressed="${!S.hiddenPhys.has(p.license)}" style="--c:${physColor(p.license)}">
       <i></i>${h(p.name)}<b>${weekCounts.get(p.license) ?? 0}</b>
     </button>`).join('');
 
   const head = days.map(d => {
-    const n = inWeek.filter(a => sameDay(a.start, d)).length;
-    const cls = [sameDay(d, now) && 'is-today', d.getDay() % 6 === 0 && 'is-weekend'].filter(Boolean).join(' ');
+    const n = inWeek.filter(a => isClinicDay(a.start, d)).length;
+    const cls = [clinicDateKey(now) === calendarDateKey(d) && 'is-today', d.getUTCDay() % 6 === 0 && 'is-weekend'].filter(Boolean).join(' ');
     return `<div class="cal-dh ${cls}">
-      <span class="cal-dow">${d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-      <span class="cal-dnum">${d.getDate()}</span>
+      <span class="cal-dow">${d.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' })}</span>
+      <span class="cal-dnum">${d.getUTCDate()}</span>
       <span class="cal-dcount">${n ? `${n} appt${n > 1 ? 's' : ''}` : ''}</span>
     </div>`;
   }).join('');
@@ -724,10 +762,10 @@ function calendarView() {
 
   let delay = 0;
   const cols = days.map((d, di) => {
-    const dayItems = layoutDay(inWeek.filter(a => sameDay(a.start, d)));
+    const dayItems = layoutDay(inWeek.filter(a => isClinicDay(a.start, d)));
     const blocks = dayItems.map(a => {
       const startMin = minutesOf(a.start);
-      const endMin   = sameDay(a.start, a.end) ? minutesOf(a.end) : 24 * 60;
+      const endMin   = sameClinicDay(a.start, a.end) ? minutesOf(a.end) : 24 * 60;
       const top    = (startMin - first * 60) * HOUR_PX / 60;
       const height = Math.max((endMin - startMin) * HOUR_PX / 60, 22) - 3;
       const cls = [height < 30 ? 'is-short' : height < 52 && 'is-compact', a.end < now && 'is-past'].filter(Boolean).join(' ');
@@ -739,14 +777,14 @@ function calendarView() {
         <span class="cal-ev-doc">${h(a.physician)}</span>
       </button>`;
     }).join('');
-    const cls = [sameDay(d, now) && 'is-today', d.getDay() % 6 === 0 && 'is-weekend'].filter(Boolean).join(' ');
+    const cls = [clinicDateKey(now) === calendarDateKey(d) && 'is-today', d.getUTCDay() % 6 === 0 && 'is-weekend'].filter(Boolean).join(' ');
     return `<div class="cal-col ${cls}" data-day="${di}" title="Click to schedule">${blocks}</div>`;
   }).join('');
 
   let empty = '';
   if (!inWeek.length) {
-    const target = visible.filter(a => a.start >= weekEnd).sort((a, b) => a.start - b.start)[0]
-                ?? visible.filter(a => a.start < S.week).sort((a, b) => b.start - a.start)[0];
+    const target = visible.filter(a => clinicDateKey(a.start) >= weekEndKey).sort((a, b) => a.start - b.start)[0]
+          ?? visible.filter(a => clinicDateKey(a.start) < weekStartKey).sort((a, b) => b.start - a.start)[0];
     empty = `<div class="cal-empty"><div class="cal-empty-card">
       <div class="cal-empty-title">A quiet week</div>
       <div class="cal-empty-desc">${S.hiddenPhys.size ? 'Nothing scheduled for the selected physicians.' : 'Nothing scheduled. Click any time slot to book.'}</div>
@@ -778,7 +816,7 @@ function placeNowLine() {
   document.getElementById('cal-now')?.remove();
   if (!S.cal) return;
   const now = new Date();
-  const di  = S.cal.days.findIndex(d => sameDay(d, now));
+  const di  = S.cal.days.findIndex(d => clinicDateKey(now) === calendarDateKey(d));
   const min = minutesOf(now) - S.cal.first * 60;
   if (di < 0 || min < 0 || min > (S.cal.last - S.cal.first) * 60) return;
   const col = document.querySelector(`.cal-col[data-day="${di}"]`);
@@ -795,7 +833,8 @@ function openSlot(col, clientY) {
   const day = S.cal.days[Number(col.dataset.day)];
   const y   = clientY - col.getBoundingClientRect().top;
   const min = S.cal.first * 60 + Math.floor(y / (HOUR_PX / 2)) * 30;
-  const start = new Date(day); start.setMinutes(min);
+  const wall = { year: day.getUTCFullYear(), month: day.getUTCMonth() + 1, day: day.getUTCDate(), hour: Math.floor(min / 60), minute: min % 60 };
+  const start = fromClinicWallTime(wall);
   openModal('add', { startTime: start.toISOString(), endTime: new Date(start.getTime() + 30 * 60000).toISOString() });
 }
 
@@ -905,15 +944,16 @@ function physicianForm(d, isEdit) {
 function appointmentForm(d) {
   const fmt = v => {
     if (!v) return '';
-    const dt = new Date(v), off = dt.getTimezoneOffset();
-    return new Date(dt.getTime() - off * 60000).toISOString().slice(0,16);
+    const p = clinicParts(new Date(v));
+    return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}T${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
   };
+  const timeZoneLabel = S.clinic?.label ?? clinicTimeZone();
   return `
     <div class="fg"><label>Patient *</label><select id="f-pat"><option value="">— Select patient —</option></select></div>
     <div class="fg"><label>Physician *</label><select id="f-phys"><option value="">— Select physician —</option></select></div>
     <div class="frow">
-      <div class="fg"><label>Start Time *</label><input id="f-start" type="datetime-local" value="${fmt(d?.startTime??'')}" /></div>
-      <div class="fg"><label>End Time *</label><input id="f-end" type="datetime-local" value="${fmt(d?.endTime??'')}" /></div>
+      <div class="fg"><label>Start Time (${h(timeZoneLabel)}) *</label><input id="f-start" type="datetime-local" value="${fmt(d?.startTime??'')}" /></div>
+      <div class="fg"><label>End Time (${h(timeZoneLabel)}) *</label><input id="f-end" type="datetime-local" value="${fmt(d?.endTime??'')}" /></div>
     </div>
     <input type="hidden" id="f-pat-init"  value="${h(d?.patientId??'')}" />
     <input type="hidden" id="f-phys-init" value="${h(d?.physicianLicense??'')}" />`;
@@ -980,10 +1020,16 @@ async function savePhysician(mode, id) {
   else await api(`/api/physicians?license=${encodeURIComponent(license)}`, { method:'PUT', body:JSON.stringify(body) });
 }
 
-// datetime-local values are in the user's time zone; send absolute ISO timestamps.
-function toISO(v) { const d = v ? new Date(v) : null; return d && !isNaN(d) ? d.toISOString() : null; }
+// datetime-local values are clinic wall time; convert them to absolute instants before sending.
+function toISO(v) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(v ?? '');
+  if (!match) return null;
+  const [, year, month, day, hour, minute] = match;
+  return fromClinicWallTime({ year: Number(year), month: Number(month), day: Number(day), hour: Number(hour), minute: Number(minute) }).toISOString();
+}
 
 async function saveAppointment(mode, id) {
+  if (!S.clinic) throw new Error('Clinic timezone settings are unavailable');
   const patientId        = document.getElementById('f-pat').value;
   const physicianLicense = document.getElementById('f-phys').value;
   const startTime = toISO(document.getElementById('f-start').value);
@@ -992,8 +1038,8 @@ async function saveAppointment(mode, id) {
   if (!physicianLicense) throw new Error('A physician is required');
   if (!startTime || !endTime) throw new Error('Start and end times are required');
   if (new Date(endTime) <= new Date(startTime)) throw new Error('End time must be after start time');
-  // The server checks for scheduling conflicts and reports them in this time zone.
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // Use the clinic zone for both scheduling validation and conflict messages.
+  const timeZone = clinicTimeZone();
   const body = { startTime, endTime, patientId, physicianLicense, timeZone };
   if (mode === 'add') await api('/api/appointments', { method:'POST', body:JSON.stringify(body) });
   else await api(`/api/appointments?id=${id}`, { method:'PUT', body:JSON.stringify(body) });
