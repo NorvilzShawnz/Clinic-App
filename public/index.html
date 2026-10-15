@@ -573,6 +573,7 @@ function emptyState() {
 }
 
 function h(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function dataField(record, camelCase, snakeCase) { return record?.[camelCase] ?? record?.[snakeCase]; }
 function fDate(v) { if (!v) return '—'; return new Date(v).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}); }
 function fDT(v)   { if (!v) return '—'; return new Date(v).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:clinicTimeZone()}); }
 function maskSSN(s) { if (!s) return '—'; return '•••–••–' + String(s).slice(-4); }  // API already returns only the last 4 digits
@@ -598,7 +599,7 @@ function physicianTable(data) {
   const rows = data.map(p => `<tr>
     <td class="td-bold">${h(p.name)}</td>
     <td><span class="badge badge-b">${h(p.license)}</span></td>
-    <td>${fDate(p.graduationDate)}</td>
+    <td>${fDate(dataField(p, 'graduationDate', 'graduation_date'))}</td>
     <td>${h(p.specializations) || '—'}</td>
     <td><div class="row-acts">
       <button class="btn-icon"   title="Edit"   data-act="edit" data-id="${h(p.license)}">${EDIT_SVG}</button>
@@ -663,10 +664,12 @@ function physColor(license) {
 function apptItems() {
   return (S.appointments ?? []).map(row => {
     const a = row.appointments ?? row;
+    const startTime = dataField(a, 'startTime', 'start_time');
+    const endTime = dataField(a, 'endTime', 'end_time');
     return {
-      id: a.id, license: a.physicianLicense,
-      start: a.startTime ? new Date(a.startTime) : null,
-      end:   a.endTime   ? new Date(a.endTime)   : null,
+      id: a.id, license: dataField(a, 'physicianLicense', 'physician_license'),
+      start: startTime ? new Date(startTime) : null,
+      end:   endTime   ? new Date(endTime)   : null,
       patient:   row.patients?.name   ?? 'No patient',
       physician: row.physicians?.name ?? 'No physician',
     };
@@ -929,7 +932,8 @@ function patientForm(d) {
 }
 
 function physicianForm(d, isEdit) {
-  const gd = d?.graduationDate ? new Date(d.graduationDate).toISOString().split('T')[0] : '';
+  const graduationDate = dataField(d, 'graduationDate', 'graduation_date');
+  const gd = graduationDate ? new Date(graduationDate).toISOString().split('T')[0] : '';
   const licField = isEdit
     ? `<input id="f-lic" type="hidden" value="${h(d?.license??'')}" />`
     : `<div class="fg"><label>License *</label><input id="f-lic" value="${h(d?.license??'')}" placeholder="e.g. MD-2024-0847" /><span class="fhint">Cannot be changed after creation</span></div>`;
@@ -952,11 +956,11 @@ function appointmentForm(d) {
     <div class="fg"><label>Patient *</label><select id="f-pat"><option value="">— Select patient —</option></select></div>
     <div class="fg"><label>Physician *</label><select id="f-phys"><option value="">— Select physician —</option></select></div>
     <div class="frow">
-      <div class="fg"><label>Start Time (${h(timeZoneLabel)}) *</label><input id="f-start" type="datetime-local" value="${fmt(d?.startTime??'')}" /></div>
-      <div class="fg"><label>End Time (${h(timeZoneLabel)}) *</label><input id="f-end" type="datetime-local" value="${fmt(d?.endTime??'')}" /></div>
+      <div class="fg"><label>Start Time (${h(timeZoneLabel)}) *</label><input id="f-start" type="datetime-local" value="${fmt(dataField(d, 'startTime', 'start_time') ?? '')}" /></div>
+      <div class="fg"><label>End Time (${h(timeZoneLabel)}) *</label><input id="f-end" type="datetime-local" value="${fmt(dataField(d, 'endTime', 'end_time') ?? '')}" /></div>
     </div>
-    <input type="hidden" id="f-pat-init"  value="${h(d?.patientId??'')}" />
-    <input type="hidden" id="f-phys-init" value="${h(d?.physicianLicense??'')}" />`;
+    <input type="hidden" id="f-pat-init"  value="${h(dataField(d, 'patientId', 'patient_id') ?? '')}" />
+    <input type="hidden" id="f-phys-init" value="${h(dataField(d, 'physicianLicense', 'physician_license') ?? '')}" />`;
 }
 
 async function populateDropdowns(d) {
